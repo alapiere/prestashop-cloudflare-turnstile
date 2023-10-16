@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright (C) 2022 Pixel Développement
  *
@@ -12,8 +13,7 @@ if (!defined('_PS_VERSION_')) {
 use PrestaShop\PrestaShop\Core\Addon\Theme\ThemeProviderInterface;
 use PrestaShop\PrestaShop\Core\Module\WidgetInterface;
 
-class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
-{
+class Pixel_cloudflare_turnstile extends Module implements WidgetInterface {
     public const TURNSTILE_SESSION_ERROR_KEY = 'turnstile_error';
 
     public const CONFIG_CLOUDFLARE_TURNSTILE_SITEKEY = 'CLOUDFLARE_TURNSTILE_SITEKEY';
@@ -33,8 +33,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
     /**
      * Module's constructor.
      */
-    public function __construct()
-    {
+    public function __construct() {
         $this->name = 'pixel_cloudflare_turnstile';
         $this->version = '1.2.0';
         $this->author = 'Pixel Open';
@@ -71,8 +70,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return bool
      */
-    public function install(): bool
-    {
+    public function install(): bool {
         return parent::install() &&
             $this->registerHook('actionFrontControllerSetMedia') &&
             $this->registerHook('displayCustomerAccountForm') &&
@@ -84,8 +82,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return bool
      */
-    public function uninstall(): bool
-    {
+    public function uninstall(): bool {
         return parent::uninstall() && $this->deleteConfigurations();
     }
 
@@ -94,8 +91,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return bool
      */
-    public function isUsingNewTranslationSystem(): bool
-    {
+    public function isUsingNewTranslationSystem(): bool {
         return true;
     }
 
@@ -108,8 +104,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return void
      */
-    public function hookActionFrontControllerSetMedia(): void
-    {
+    public function hookActionFrontControllerSetMedia(): void {
         $this->context->controller->registerStylesheet(
             'cloudflare-turnstile',
             'modules/' . $this->name . '/views/css/turnstile.css',
@@ -135,8 +130,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string
      */
-    public function hookDisplayCustomerAccountForm(): string
-    {
+    public function hookDisplayCustomerAccountForm(): string {
         if ($this->context->customer->isLogged()) {
             return '';
         }
@@ -154,8 +148,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      * @return void
      * @throws Exception
      */
-    public function hookActionFrontControllerInitBefore(array $params): void
-    {
+    public function hookActionFrontControllerInitBefore(array $params): void {
         if (!$this->canProcess(get_class($params['controller']))) {
             return;
         }
@@ -201,12 +194,12 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return bool
      */
-    protected function canProcess(string $controllerClass, bool $validate = false): bool
-    {
+    protected function canProcess(string $controllerClass, bool $validate = false): bool {
         $isLoggedIn = $this->context->customer->isLogged();
 
         // Register or login in checkout
-        if ($controllerClass === 'OrderController' &&
+        if (
+            $controllerClass === 'OrderController' &&
             ($this->isAvailable(self::FORM_CHECKOUT_REGISTER) || $this->isAvailable(self::FORM_CHECKOUT_LOGIN))
         ) {
             if ($this->isAvailable(self::FORM_CHECKOUT_REGISTER) && $this->isAvailable(self::FORM_CHECKOUT_LOGIN)) {
@@ -238,7 +231,8 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
         }
 
         // Register
-        if ($controllerClass === 'AuthController' &&
+        if (
+            $controllerClass === 'AuthController' &&
             $this->isAvailable(self::FORM_REGISTER) &&
             Tools::getValue('create_account') &&
             !$isLoggedIn
@@ -250,7 +244,8 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
         }
 
         // Register Prestashop >= 8.0.0
-        if ($controllerClass === 'RegistrationController' &&
+        if (
+            $controllerClass === 'RegistrationController' &&
             $this->isAvailable(self::FORM_REGISTER) &&
             !$isLoggedIn
         ) {
@@ -261,7 +256,8 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
         }
 
         // Login
-        if ($controllerClass === 'AuthController' &&
+        if (
+            $controllerClass === 'AuthController' &&
             $this->isAvailable(self::FORM_LOGIN) &&
             !Tools::getValue('create_account') &&
             !$isLoggedIn
@@ -290,8 +286,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return bool
      */
-    public function isAvailable(string $form): bool
-    {
+    public function isAvailable(string $form): bool {
         return in_array($form, $this->getForms());
     }
 
@@ -301,8 +296,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      * @return void
      * @throws Exception
      */
-    public static function turnstileValidation(): void
-    {
+    public static function turnstileValidation(): void {
         $referer = $_SERVER['HTTP_REFERER'] ?? 'index';
         $cookie  = Context::getContext()->cookie;
 
@@ -358,8 +352,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string
      */
-    protected static function getErrorMessage(string $code): string
-    {
+    protected static function getErrorMessage(string $code): string {
         $messages = [
             'missing-input-secret'   => 'the secret parameter was not passed.',
             'invalid-input-secret'   => 'the secret parameter was invalid or did not exist.',
@@ -386,15 +379,12 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string
      */
-    public function renderWidget($hookName, array $configuration): string
-    {
+    public function renderWidget($hookName, array $configuration): string {
         if (!isset($configuration['form'])) {
             return 'Turnstile widget error: the form parameter is missing';
         }
-        if (get_class($this->context->controller) === 'OrderController') {
-            $configuration['form'] = 'checkout-' . $configuration['form'];
-        }
-        if (!$this->isAvailable($configuration['form'])) {
+        $isCustom = (int)($configuration['custom'] ?? 0) === 1;
+        if (!$isCustom && !$this->isAvailable($configuration['form'])) {
             return '';
         }
         $keys = [$this->name, get_class($this->context->controller), $configuration['form']];
@@ -402,10 +392,8 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
         if (!$this->isCached($this->templateFile, $this->getCacheId($cacheId))) {
             $this->smarty->assign($this->getWidgetVariables($hookName, $configuration));
         }
-
         return $this->fetch($this->templateFile, $this->getCacheId($cacheId));
     }
-
     /**
      * Retrieve the widget variables
      *
@@ -414,8 +402,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string[]
      */
-    public function getWidgetVariables($hookName, array $configuration): array
-    {
+    public function getWidgetVariables($hookName, array $configuration): array {
         return [
             'sitekey' => $this->getSitekey(),
             'theme'   => $configuration['theme'] ?? $this->getTheme(),
@@ -432,8 +419,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return array[]
      */
-    protected function getConfigFields(): array
-    {
+    protected function getConfigFields(): array {
         return [
             self::CONFIG_CLOUDFLARE_TURNSTILE_SITEKEY => [
                 'type'     => 'text',
@@ -522,8 +508,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      * @return string
      * @throws Exception
      */
-    public function getContent(): string
-    {
+    public function getContent(): string {
         $themeName = $this->getCurrentThemeName();
 
         $message = $this->trans(
@@ -537,7 +522,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
         $message .= '<br /><strong>Login:</strong><br /> themes/' . $themeName . '/templates/customer/_partials/login-form.tpl';
         $message .= '<br /><code>{widget name=\'pixel_cloudflare_turnstile\' form=\'' . self::FORM_LOGIN . '\'}</code><br />';
         $message .= '<br /><strong>Reset password:</strong><br /> themes/' . $themeName . '/templates/customer/password-email.tpl';
-        $message .= '<br /><code>{widget name=\'pixel_cloudflare_turnstile\' form=\'' . self::FORM_PASSWORD. '\'}</code>';
+        $message .= '<br /><code>{widget name=\'pixel_cloudflare_turnstile\' form=\'' . self::FORM_PASSWORD . '\'}</code>';
 
         $output = '<div class="alert alert-info" style="line-height:22px">' . $message . '</div>';
 
@@ -546,12 +531,12 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
                 $value = Tools::getValue($code);
                 if ($field['required'] && empty($value)) {
                     return $this->displayError(
-                            $this->trans(
-                                '%field% is empty',
-                                ['%field%' => $field['label']],
-                                'Modules.Pixelcloudflareturnstile.Admin'
-                            )
-                        ) . $this->displayForm();
+                        $this->trans(
+                            '%field% is empty',
+                            ['%field%' => $field['label']],
+                            'Modules.Pixelcloudflareturnstile.Admin'
+                        )
+                    ) . $this->displayForm();
                 }
                 if ($value && ($field['multiple'] ?? false) === true) {
                     $value = join(',', $value);
@@ -573,8 +558,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      * @return string
      * @throws Exception
      */
-    public function getCurrentThemeName(): string
-    {
+    public function getCurrentThemeName(): string {
         return basename(Context::getContext()->shop->theme->getName());
     }
 
@@ -583,8 +567,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string
      */
-    public function displayForm(): string
-    {
+    public function displayForm(): string {
         $form = [
             'form' => [
                 'legend' => [
@@ -624,8 +607,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string[]
      */
-    public function getForms(): array
-    {
+    public function getForms(): array {
         $forms = Configuration::get(self::CONFIG_CLOUDFLARE_TURNSTILE_FORMS);
         if (!$forms) {
             return [];
@@ -639,8 +621,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string
      */
-    public function getTheme(): string
-    {
+    public function getTheme(): string {
         return Configuration::get(self::CONFIG_CLOUDFLARE_TURNSTILE_THEME) ?: 'auto';
     }
 
@@ -649,8 +630,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string|null
      */
-    protected function getSecretKey(): ?string
-    {
+    protected function getSecretKey(): ?string {
         return Configuration::get(self::CONFIG_CLOUDFLARE_TURNSTILE_SECRET_KEY) ?: null;
     }
 
@@ -659,8 +639,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return string|null
      */
-    protected function getSitekey(): ?string
-    {
+    protected function getSitekey(): ?string {
         return Configuration::get(self::CONFIG_CLOUDFLARE_TURNSTILE_SITEKEY) ?: null;
     }
 
@@ -669,8 +648,7 @@ class Pixel_cloudflare_turnstile extends Module implements WidgetInterface
      *
      * @return bool
      */
-    protected function deleteConfigurations(): bool
-    {
+    protected function deleteConfigurations(): bool {
         foreach ($this->getConfigFields() as $key => $options) {
             Configuration::deleteByName($key);
         }

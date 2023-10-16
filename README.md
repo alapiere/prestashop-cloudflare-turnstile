@@ -76,16 +76,21 @@ themes/{themeName}/templates/customer/_partials/login-form.tpl
 ```
 
 ### Reset password
-
 **Template**:
-
 themes/{themeName}/templates/customer/password-email.tpl
-
 **Widget**:
-
 ```smarty
 {widget name='pixel_cloudflare_turnstile' form='password'}
 ```
+
+### Custom Form
+**Widget**:
+```smarty
+{widget name='pixel_cloudflare_turnstile' custom='1' action='custom-form'}
+```
+
+**Note:** The action param is a free name that will appear in the Turnstile statistics
+
 
 ## Testing
 
